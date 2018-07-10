@@ -13,7 +13,12 @@ def home():
 
 @app.route(url+"/send_message", methods=["POST"])
 def send_message():
-    return "Success_testcommit"
+    req_json = json.loads(request.data.decode('utf-8'))
+    talkroom_id = req_json['id']
+    send_user_id = req_json['send_user_id']
+    message = req_json['message']
+
+    return "Success"
 
 
 if __name__ == '__main__':
