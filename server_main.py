@@ -13,7 +13,7 @@ def home():
 
 @app.route(url+"/send_message", methods=["POST"])
 def send_message():
-    return "Success"
+    return "Success_testcommit"
 
 
 if __name__ == '__main__':
