@@ -69,10 +69,12 @@ def send_data_to_users(user_tokens, send_user_token, talkroom_id, message, times
 
 @app.route("/add_user", methods=["POST"])
 def add_user():
+    # 送信されたJsonから情報を取り出す
     req_json = json.loads(request.data.decode('utf-8'))
     name = req_json["name"]
     id = req_json["id"]
 
+    # ユーザDBに接続 -> ユーザ追加
     connect_db = sqlite3.connect('user.db')
     cur = connect_db.cursor()
     cur.execute("""INSERT INTO user VALUES (?, ?, ?, ?, ?)""",
@@ -86,18 +88,22 @@ def add_user():
 
 @app.route("/update_user", methods=["POST"])
 def update_user():
+    # 送信されたJsonから情報取り出し
     req_json = json.loads(request.data.decode('utf-8'))
     user_id = req_json["id"]
 
+    # ユーザDBに接続してidをもとにユーザ情報を取り出す
     connect_db = sqlite3.connect('user.db')
     cur = connect_db.cursor()
     user_info = cur.execute("""SELECT * FROM user WHERE user_id=?""", (user_id, )).fetchone()
 
+    # 送信されたJsonにキーがないものは旧のデータで補完する
     notify_token = req_json["notify_token"] if "notify_token" in req_json.keys() else user_info[1]
     name = req_json["name"] if "name" in req_json.keys() else user_info[2]
     icon_url = req_json["icon_url"] if "icon_url" in req_json.keys() else user_info[3]
     header_image_url = req_json["header_image_url"] if "header_image_url" in req_json.keys() else user_info[4]
 
+    # ユーザ情報上書き
     cur.execute("""UPDATE user SET user_id=?, notify_token=?, name=?, icon_url=?, header_image_url=? WHERE user_id=?""",
                 (user_id, notify_token, name, icon_url, header_image_url, user_id))
     connect_db.commit()
