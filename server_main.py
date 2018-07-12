@@ -25,11 +25,20 @@ def receive_send_info_json():
     cur = connect_db.cursor()
     talkroom_user_list = cur.execute("""SELECT user_list FROM talkroom WHERE id=?""", (talkroom_id, ))
     talkroom_user_list = talkroom_user_list.fetchone()[0].split(",")
-    talkroom_user_tokens = [user_token for user_token in talkroom_user_list]
     cur.close()
     connect_db.close()
 
-    send_data_to_users(user_tokens=talkroom_user_tokens,
+    connect_db = sqlite3.connect('user.db')
+    cur = connect_db.cursor()
+    users_token = []
+    for user_id in talkroom_user_list:
+        token = cur.execute("""SELECT notify_token FROM user WHERE user_id=?""",
+                            (user_id,)).fetchone()[0]
+        users_token.append(token)
+    cur.close()
+    connect_db.close()
+
+    send_data_to_users(user_tokens=users_token,
                        send_user_token=send_user_token,
                        talkroom_id=talkroom_id,
                        message=message,
