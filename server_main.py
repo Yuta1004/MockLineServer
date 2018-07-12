@@ -67,5 +67,45 @@ def send_data_to_users(user_tokens, send_user_token, talkroom_id, message, times
                                      data_message=send_data)
 
 
+@app.route("/add_user", methods=["POST"])
+def add_user():
+    req_json = json.loads(request.data.decode('utf-8'))
+    name = req_json["name"]
+    id = req_json["id"]
+
+    connect_db = sqlite3.connect('user.db')
+    cur = connect_db.cursor()
+    cur.execute("""INSERT INTO user VALUES (?, ?, ?, ?, ?)""",
+                (id, "none", name, "none", "none"))
+    connect_db.commit()
+    cur.close()
+    connect_db.close()
+
+    return "Success"
+
+
+@app.route("/update_user", methods=["POST"])
+def update_user():
+    req_json = json.loads(request.data.decode('utf-8'))
+    user_id = req_json["id"]
+
+    connect_db = sqlite3.connect('user.db')
+    cur = connect_db.cursor()
+    user_info = cur.execute("""SELECT * FROM user WHERE user_id=?""", (user_id, )).fetchone()
+
+    notify_token = req_json["notify_token"] if "notify_token" in req_json.keys() else user_info[1]
+    name = req_json["name"] if "name" in req_json.keys() else user_info[2]
+    icon_url = req_json["icon_url"] if "icon_url" in req_json.keys() else user_info[3]
+    header_image_url = req_json["header_image_url"] if "header_image_url" in req_json.keys() else user_info[4]
+
+    cur.execute("""UPDATE user SET user_id=?, notify_token=?, name=?, icon_url=?, header_image_url=? WHERE user_id=?""",
+                (user_id, notify_token, name, icon_url, header_image_url, user_id))
+    connect_db.commit()
+    cur.close()
+    connect_db.close()
+
+    return "Success"
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=1204)
