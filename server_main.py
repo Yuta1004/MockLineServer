@@ -15,12 +15,14 @@ def home():
 
 @app.route(url+"/send_message", methods=["POST"])
 def receive_send_info_json():
+    # 送信されたJSONから各種情報読み取り
     req_json = json.loads(request.data.decode('utf-8'))
     talkroom_id = req_json['id']
     send_user_token = req_json['send_user_token']
     message = req_json['message']
     timestamp = req_json['timestamp']
 
+    # 該当トークルームに参加しているユーザを取得
     connect_db = sqlite3.connect('talkroom.db')
     cur = connect_db.cursor()
     talkroom_user_list = cur.execute("""SELECT user_list FROM talkroom WHERE id=?""", (talkroom_id, ))
@@ -28,6 +30,7 @@ def receive_send_info_json():
     cur.close()
     connect_db.close()
 
+    # ユーザIDをもとに，ユーザDBから通知トークンを取得
     connect_db = sqlite3.connect('user.db')
     cur = connect_db.cursor()
     users_token = []
@@ -51,6 +54,7 @@ def send_data_to_users(user_tokens, send_user_token, talkroom_id, message, times
     api_key = os.getenv("FIREBASE_API_KEY")
     firebase = FCMNotification(api_key=api_key)
 
+    # 送信データ
     send_data = {
         "talkroom_id": talkroom_id,
         "send_user": send_user_token,
@@ -58,6 +62,7 @@ def send_data_to_users(user_tokens, send_user_token, talkroom_id, message, times
         "timestamp": timestamp
     }
 
+    # ユーザへ送信
     firebase.notify_multiple_devices(registration_ids=user_tokens,
                                      data_message=send_data)
 
