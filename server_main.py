@@ -1,4 +1,5 @@
 from pyfcm import FCMNotification
+import os
 from flask import Flask, request
 import json
 import sqlite3
@@ -13,11 +14,12 @@ def home():
 
 
 @app.route(url+"/send_message", methods=["POST"])
-def send_message():
+def receive_send_info_json():
     req_json = json.loads(request.data.decode('utf-8'))
     talkroom_id = req_json['id']
     send_user_token = req_json['send_user_token']
     message = req_json['message']
+    timestamp = req_json['timestamp']
 
     connect_db = sqlite3.connect('talkroom.db')
     cur = connect_db.cursor()
@@ -27,7 +29,26 @@ def send_message():
     cur.close()
     connect_db.close()
 
+    send_data_to_users(user_tokens=talkroom_user_tokens,
+                       talkroom_id=talkroom_id,
+                       message=message,
+                       timestamp=timestamp)
+
     return "Success"
+
+
+def send_data_to_users(user_tokens, talkroom_id, message, timestamp):
+    api_key = os.getenv("FIREBASE_API_KEY")
+    firebase = FCMNotification(api_key=api_key)
+
+    send_data = {
+        "talkroom_id": talkroom_id,
+        "message": message,
+        "timestamp": timestamp
+    }
+
+    firebase.notify_multiple_devices(registration_ids=user_tokens,
+                                     data_message=send_data)
 
 
 if __name__ == '__main__':
