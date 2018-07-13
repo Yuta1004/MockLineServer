@@ -1,6 +1,6 @@
 from pyfcm import FCMNotification
 import os
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import json
 import sqlite3
 
@@ -113,6 +113,37 @@ def update_user():
     connect_db.close()
 
     return "Success"
+
+
+@app.route("/get_join_talkrooms", methods=["POST"])
+def get_join_talkrooms():
+    # 送信されたJsonから情報を取り出す
+    req_json = json.loads(request.data.decode('utf-8'))
+    user_id = req_json["id"]
+
+    # トークルームDBに接続してidをもとに参加トークルームを取り出す
+    connect_db = sqlite3.connect('talkroom.db')
+    cur = connect_db.cursor()
+    talkrooms = cur.execute("""SELECT * FROM talkroom WHERE user_list LIKE ?""",
+                                 ("%"+user_id+"%", )).fetchall()
+
+    # DBから取り出した情報をリストに入れていく
+    join_talkrooms = []
+    for row in talkrooms:
+        join_talkrooms.append(
+            {
+                "id": row[0],
+                "name": row[1],
+                "user_list": [user for user in row[2].split(",")],
+                "icon_url": row[3]
+            }
+        )
+
+    cur.close()
+    connect_db.close()
+
+    # Jsonで返す
+    return jsonify({"talkrooms": join_talkrooms})
 
 
 if __name__ == '__main__':
