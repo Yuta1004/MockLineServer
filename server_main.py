@@ -140,6 +140,30 @@ def make_talkroom():
     return jsonify({"talkroom_id": talkroom_id})
 
 
+@app.route("/update_talkroom_info", methods=["POST"])
+def update_talkroom_info():
+    req_json = json.loads(request.data.decode('utf-8'))
+    talkroom_id = req_json["talkroom_id"]
+
+    connect_db = sqlite3.connect('talkroom.db')
+    cur = connect_db.cursor()
+    talkroom_info = cur.execute("""SELECT * FROM talkroom WHERE id=?""",
+                                (talkroom_id, )).fetchone()
+
+    talkroom_name = req_json["talkroom_name"] if "talkroom_name" in req_json.keys() else talkroom_info[1]
+    talkroom_user_list = req_json["talkroom_user_list"] if "talkroom_user_list" in req_json.keys() else talkroom_info[2]
+    talkroom_icon_url = req_json["talkroom_icon_url"] if "talkroom_icon_url" in req_json.keys() else talkroom_info[3]
+
+    cur.execute("""UPDATE talkroom SET name=?, user_list=?, icon_url=? WHERE id=?""",
+                (talkroom_name, talkroom_user_list, talkroom_icon_url, talkroom_id))
+    connect_db.commit()
+
+    cur.close()
+    connect_db.close()
+
+    return "Success"
+
+
 @app.route("/get_join_talkrooms", methods=["POST"])
 def get_join_talkrooms():
     # 送信されたJsonから情報を取り出す
