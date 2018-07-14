@@ -3,6 +3,7 @@ import os
 from flask import Flask, request, jsonify
 import json
 import sqlite3
+import uuid
 
 app = Flask(__name__)
 url = ""
@@ -118,6 +119,25 @@ def update_user():
     connect_db.close()
 
     return "Success"
+
+
+@app.route("/make_talkroom", methods=["POST"])
+def make_talkroom():
+    req_json = json.loads(request.data.decode('utf-8'))
+    user_list = req_json["user_list"]
+    talkroom_name = req_json["talkroom_name"]
+
+    talkroom_id = str(uuid.uuid4())
+
+    conncect_db = sqlite3.connect('talkroom.db')
+    cur = conncect_db.cursor()
+    cur.execute("""INSERT INTO talkroom VALUES (?, ?, ?, ?)""",
+                (talkroom_id, talkroom_name, user_list, ""))
+    conncect_db.commit()
+    cur.close()
+    conncect_db.close()
+
+    return jsonify({"talkroom_id": talkroom_id})
 
 
 @app.route("/get_join_talkrooms", methods=["POST"])
