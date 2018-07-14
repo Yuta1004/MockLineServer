@@ -123,12 +123,15 @@ def update_user():
 
 @app.route("/make_talkroom", methods=["POST"])
 def make_talkroom():
+    # 送られてきたJsonから情報を取り出す
     req_json = json.loads(request.data.decode('utf-8'))
     user_list = req_json["user_list"]
     talkroom_name = req_json["talkroom_name"]
 
+    # 新規ID生成(UUID: Random)
     talkroom_id = str(uuid.uuid4())
 
+    # DBに接続してトークルームを追加する
     conncect_db = sqlite3.connect('talkroom.db')
     cur = conncect_db.cursor()
     cur.execute("""INSERT INTO talkroom VALUES (?, ?, ?, ?)""",
@@ -137,23 +140,28 @@ def make_talkroom():
     cur.close()
     conncect_db.close()
 
+    # 生成されたIDをJsonで返す
     return jsonify({"talkroom_id": talkroom_id})
 
 
 @app.route("/update_talkroom_info", methods=["POST"])
 def update_talkroom_info():
+    # 送られてきたJsonから情報を取り出す
     req_json = json.loads(request.data.decode('utf-8'))
     talkroom_id = req_json["talkroom_id"]
 
+    # idをもとにトークルーム情報を取り出す
     connect_db = sqlite3.connect('talkroom.db')
     cur = connect_db.cursor()
     talkroom_info = cur.execute("""SELECT * FROM talkroom WHERE id=?""",
                                 (talkroom_id, )).fetchone()
 
+    # Jsonに含まれていないデータを旧データて補完する
     talkroom_name = req_json["talkroom_name"] if "talkroom_name" in req_json.keys() else talkroom_info[1]
     talkroom_user_list = req_json["talkroom_user_list"] if "talkroom_user_list" in req_json.keys() else talkroom_info[2]
     talkroom_icon_url = req_json["talkroom_icon_url"] if "talkroom_icon_url" in req_json.keys() else talkroom_info[3]
 
+    # トークルーム情報変更
     cur.execute("""UPDATE talkroom SET name=?, user_list=?, icon_url=? WHERE id=?""",
                 (talkroom_name, talkroom_user_list, talkroom_icon_url, talkroom_id))
     connect_db.commit()
