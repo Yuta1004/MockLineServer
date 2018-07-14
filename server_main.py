@@ -13,6 +13,11 @@ def home():
     return "Welcome to MockLineServer Home Page!!"
 
 
+@app.route("/check_server", methods=["GET"])
+def check_server():
+    return "Server OK"
+
+
 @app.route(url+"/send_message", methods=["POST"])
 def receive_send_info_json():
     # 送信されたJSONから各種情報読み取り
