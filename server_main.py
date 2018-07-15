@@ -9,7 +9,7 @@ app = Flask(__name__)
 url = ""
 
 
-@app.route(url+"/")
+@app.route(url + "/")
 def home():
     return "Welcome to MockLineServer Home Page!!"
 
@@ -19,7 +19,7 @@ def check_server():
     return "Server OK"
 
 
-@app.route(url+"/send_message", methods=["POST"])
+@app.route(url + "/send_message", methods=["POST"])
 def receive_send_info_json():
     # 送信されたJSONから各種情報読み取り
     req_json = json.loads(request.data.decode('utf-8'))
@@ -31,7 +31,7 @@ def receive_send_info_json():
     # 該当トークルームに参加しているユーザを取得
     connect_db = sqlite3.connect('talkroom.db')
     cur = connect_db.cursor()
-    talkroom_user_list = cur.execute("""SELECT user_list FROM talkroom WHERE id=?""", (talkroom_id, ))
+    talkroom_user_list = cur.execute("""SELECT user_list FROM talkroom WHERE id=?""", (talkroom_id,))
     talkroom_user_list = talkroom_user_list.fetchone()[0].split(",")
     cur.close()
     connect_db.close()
@@ -101,13 +101,13 @@ def update_user():
     # ユーザDBに接続してidをもとにユーザ情報を取り出す
     connect_db = sqlite3.connect('user.db')
     cur = connect_db.cursor()
-    user_info = cur.execute("""SELECT * FROM user WHERE user_id=?""", (user_id, )).fetchone()
+    user_info = cur.execute("""SELECT * FROM user WHERE user_id=?""", (user_id,)).fetchone()
 
     # 送信されたJsonのデータが空なら旧データで補完する
     items = []
     for idx, key in enumerate(["notify_token", "name", "icon_url", "header_image_url"]):
         if (key not in req_json.keys()) or (req_json[key] == ""):
-            items.append(user_info[idx+1])
+            items.append(user_info[idx + 1])
         else:
             items.append(req_json[key])
 
@@ -154,7 +154,7 @@ def update_talkroom_info():
     connect_db = sqlite3.connect('talkroom.db')
     cur = connect_db.cursor()
     talkroom_info = cur.execute("""SELECT * FROM talkroom WHERE id=?""",
-                                (talkroom_id, )).fetchone()
+                                (talkroom_id,)).fetchone()
 
     # Jsonに含まれていないデータを旧データて補完する
     talkroom_name = req_json["talkroom_name"] if "talkroom_name" in req_json.keys() else talkroom_info[1]
@@ -172,6 +172,68 @@ def update_talkroom_info():
     return "Success"
 
 
+@app.route("/get_friends_list", methods=["POST"])
+def get_friends():
+    # 送信されたJsonから情報を取り出す
+    req_json = json.loads(request.data.decode('utf-8'))
+    user_id = req_json["user_id"]
+
+    # DBに接続して友達リストを取り出す
+    connect_db = sqlite3.connect('user.db')
+    cur = connect_db.cursor()
+    friends_list_db = cur.execute("""SELECT friends_list FROM user WHERE user_id=?""",
+                                  (user_id,)).fetchone()[0]
+
+    friends_list = [friend for friend in friends_list_db.split(",")][:-1]
+
+    cur.close()
+    connect_db.close()
+
+    # Jsonで返す
+    return jsonify({"friends_list": friends_list})
+
+
+@app.route("/add_friends", methods=["POST"])
+def add_friends():
+    # 送信されたJsonから情報を取り出す
+    req_json = json.loads(request.data.decode('utf-8'))
+    user_id = req_json["user_id"]
+    add_friends_user_id = req_json["add_friends_user_id"]
+
+    # 自分自身ならエラー
+    if user_id == add_friends_user_id:
+        return "Userid is same"
+
+    # DBに接続して現在の友達リストを取り出す
+    connect_db = sqlite3.connect('user.db')
+    cur = connect_db.cursor()
+    now_friends = cur.execute("""SELECT friends_list FROM user WHERE user_id=?""",
+                              (user_id, )).fetchone()[0]
+    now_friends_list = [friend for friend in now_friends.split(",")]
+
+    user_existence_count = cur.execute("""SELECT * FROM user WHERE user_id=?""",
+                                 (add_friends_user_id, )).fetchall()
+
+    # 現在の友達リストに追加するユーザが存在しないか，追加するユーザが登録済みのユーザかどうか判定
+    if (add_friends_user_id not in now_friends_list) and (len(user_existence_count) == 1):
+        now_friends += add_friends_user_id + ","
+
+        cur.execute("""UPDATE user SET friends_list=? WHERE user_id=?""",
+                    (now_friends, user_id))
+        connect_db.commit()
+
+        ret_message = "Success"
+    elif len(user_existence_count) != 1:  # 存在しないユーザだった場合
+        ret_message = "No Existnce User"
+    else:  # 既に友達のユーザだった場合
+        ret_message = "Already Added User"
+
+    cur.close()
+    connect_db.close()
+
+    return ret_message
+
+
 @app.route("/get_join_talkrooms", methods=["POST"])
 def get_join_talkrooms():
     # 送信されたJsonから情報を取り出す
@@ -182,7 +244,7 @@ def get_join_talkrooms():
     connect_db = sqlite3.connect('talkroom.db')
     cur = connect_db.cursor()
     talkrooms = cur.execute("""SELECT * FROM talkroom WHERE user_list LIKE ?""",
-                                 ("%"+user_id+"%", )).fetchall()
+                            ("%" + user_id + "%",)).fetchall()
 
     # DBから取り出した情報をリストに入れていく
     join_talkrooms = []
