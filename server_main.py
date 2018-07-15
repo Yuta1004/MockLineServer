@@ -121,6 +121,30 @@ def update_user():
     return "Success"
 
 
+@app.route("/get_user_info", methods=["POST"])
+def get_user_info():
+    # 送信されたJsonから情報取り出し
+    req_json = json.loads(request.data.decode('utf-8'))
+    user_id = req_json["user_id"]
+
+    # DBへ接続してユーザ情報取り出し
+    connect_db = sqlite3.connect('user.db')
+    cur = connect_db.cursor()
+    user_info = cur.execute("""SELECT * FROM user WHERE user_id=?""",
+                            (user_id, )).fetchone()
+
+    cur.close()
+    connect_db.close()
+
+    # Jsonを返す
+    return jsonify({
+        "user_id": user_id,
+        "name": user_info[2],
+        "icon_url": user_info[3],
+        "header_image_url": user_info[4]
+    })
+
+
 @app.route("/make_talkroom", methods=["POST"])
 def make_talkroom():
     # 送られてきたJsonから情報を取り出す
