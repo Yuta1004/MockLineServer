@@ -83,8 +83,8 @@ def add_user():
     # ユーザDBに接続 -> ユーザ追加
     connect_db = sqlite3.connect('user.db')
     cur = connect_db.cursor()
-    cur.execute("""INSERT INTO user VALUES (?, ?, ?, ?, ?)""",
-                (id, "none", name, "none", "none"))
+    cur.execute("""INSERT INTO user VALUES (?, ?, ?, ?, ?, ?)""",
+                (id, "none", name, "none", "none", "none"))
     connect_db.commit()
     cur.close()
     connect_db.close()
