@@ -32,7 +32,7 @@ def receive_send_info_json():
     connect_db = sqlite3.connect('talkroom.db')
     cur = connect_db.cursor()
     talkroom_user_list = cur.execute("""SELECT user_list FROM talkroom WHERE id=?""", (talkroom_id,))
-    talkroom_user_list = talkroom_user_list.fetchone()[0].split(",")
+    talkroom_user_list = talkroom_user_list.fetchone()[0].split(";")
     cur.close()
     connect_db.close()
 
@@ -208,7 +208,7 @@ def get_friends():
     friends_list_db = cur.execute("""SELECT friends_list FROM user WHERE user_id=?""",
                                   (user_id,)).fetchone()[0]
 
-    friends_list = [friend for friend in friends_list_db.split(",")][:-1]
+    friends_list = [friend for friend in friends_list_db.split(";")][:-1]
 
     cur.close()
     connect_db.close()
@@ -233,14 +233,14 @@ def add_friends():
     cur = connect_db.cursor()
     now_friends = cur.execute("""SELECT friends_list FROM user WHERE user_id=?""",
                               (user_id, )).fetchone()[0]
-    now_friends_list = [friend for friend in now_friends.split(",")]
+    now_friends_list = [friend for friend in now_friends.split(";")]
 
     user_existence_count = cur.execute("""SELECT * FROM user WHERE user_id=?""",
                                  (add_friends_user_id, )).fetchall()
 
     # 現在の友達リストに追加するユーザが存在しないか，追加するユーザが登録済みのユーザかどうか判定
     if (add_friends_user_id not in now_friends_list) and (len(user_existence_count) == 1):
-        now_friends += add_friends_user_id + ","
+        now_friends += add_friends_user_id + ";"
 
         cur.execute("""UPDATE user SET friends_list=? WHERE user_id=?""",
                     (now_friends, user_id))
@@ -277,7 +277,7 @@ def get_join_talkrooms():
             {
                 "id": row[0],
                 "name": row[1],
-                "user_list": [user for user in row[2].split(",")],
+                "user_list": [user for user in row[2].split(";")],
                 "icon_url": row[3]
             }
         )
