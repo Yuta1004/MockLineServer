@@ -125,24 +125,32 @@ def update_user():
 def get_user_data():
     # 送信されたJsonから情報取り出し
     req_json = json.loads(request.data.decode('utf-8'))
-    user_id = req_json["user_id"]
+    user_ids = req_json["user_ids"]
 
-    # DBへ接続してユーザ情報取り出し
+    # ユーザ情報を入れる変数
+    user_data = {}
+
     connect_db = sqlite3.connect('user.db')
     cur = connect_db.cursor()
-    user_info = cur.execute("""SELECT * FROM user WHERE user_id=?""",
-                            (user_id, )).fetchone()
+
+    # DBへ接続してユーザ情報取り出し
+    for user_id in user_ids:
+        user_info = cur.execute("""SELECT * FROM user WHERE user_id=?""",
+                                (user_id, )).fetchone()
+
+        # ユーザ情報を格納する
+        user_data[user_id] = {
+            "user_id": user_id,
+            "name": user_info[2],
+            "icon_url": user_info[3],
+            "header_image_url": user_info[4]
+        }
 
     cur.close()
     connect_db.close()
 
     # Jsonを返す
-    return jsonify({
-        "user_id": user_id,
-        "name": user_info[2],
-        "icon_url": user_info[3],
-        "header_image_url": user_info[4]
-    })
+    return jsonify(user_data)
 
 
 @app.route("/make_talkroom", methods=["POST"])
