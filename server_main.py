@@ -121,8 +121,8 @@ def update_user():
     return "Success"
 
 
-@app.route("/get_user_info", methods=["POST"])
-def get_user_info():
+@app.route("/get_user_data", methods=["POST"])
+def get_user_data():
     # 送信されたJsonから情報取り出し
     req_json = json.loads(request.data.decode('utf-8'))
     user_id = req_json["user_id"]
