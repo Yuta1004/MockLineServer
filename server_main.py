@@ -52,7 +52,7 @@ def receive_send_info_json():
     connect_db.close()
 
     send_data_to_users(user_tokens=users_token,
-                       send_user_token=sender_id,
+                       sender_id=sender_id,
                        talkroom_id=talkroom_id,
                        message=message,
                        timestamp=timestamp)
@@ -60,14 +60,14 @@ def receive_send_info_json():
     return "Success"
 
 
-def send_data_to_users(user_tokens, send_user_token, talkroom_id, message, timestamp):
+def send_data_to_users(user_tokens, sender_id, talkroom_id, message, timestamp):
     api_key = os.getenv("FIREBASE_API_KEY")
     firebase = FCMNotification(api_key=api_key)
 
     # 送信データ
     send_data = {
         "talkroom_id": talkroom_id,
-        "send_user": send_user_token,
+        "send_user": sender_id,
         "message": message,
         "timestamp": timestamp
     }
