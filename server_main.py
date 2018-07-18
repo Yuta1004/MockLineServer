@@ -297,5 +297,31 @@ def get_join_talkrooms():
     return jsonify({"talkrooms": join_talkrooms})
 
 
+@app.route("/get_talkroom_data", methods=["POST"])
+def get_talkroom_data():
+    # 送信されたJsonから情報を取り出す
+    req_json = json.loads(request.data.decode('utf-8'))
+    talkroom_id = req_json["talkroom_id"]
+
+    # DB接続して指定IDのトークルーム情報を取り出す
+    connect_db = sqlite3.connect('talkroom.db')
+    cur = connect_db.cursor()
+    talkroom_data = cur.execute("""SELECT * FROM talkroom WHERE id=?""",
+                                (talkroom_id, )).fetchone()
+
+    ret_dict = {
+        "talkroom_id": talkroom_id,
+        "talkroom_name": talkroom_data[1],
+        "talkroom_user_lisr": talkroom_data[2],
+        "talkroom_icon_url": talkroom_data[3]
+    }
+
+    cur.close()
+    connect_db.close()
+
+    # Jsonを返す
+    return jsonify(ret_dict)
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=1204)
