@@ -28,23 +28,23 @@ def receive_send_info_json():
     message = req_json['message']
     timestamp = req_json['timestamp']
 
-    # 該当トークルームに参加しているユーザを取得
+    # 該当トークルームに参加しているユーザとトークルーム名を取得
     connect_db = sqlite3.connect('talkroom.db')
     cur = connect_db.cursor()
-    talkroom_user_list = cur.execute("""SELECT user_list FROM talkroom WHERE id=?""", (talkroom_id,))
-    talkroom_user_list = talkroom_user_list.fetchone()[0].replace(sender_id+";", "").split(";")
+    talkroom_data = cur.execute("""SELECT * FROM talkroom WHERE id=?""", (talkroom_id,)).fetchone()
+    talkroom_user_list = talkroom_data[2].replace(sender_id+";", "").split(";")
+    talkroom_name = talkroom_data[1]
     cur.close()
     connect_db.close()
-
-    # user_listが空だった時の処理
-    if talkroom_user_list[0] == "":
-        talkroom_user_list = []
 
     # ユーザIDをもとに，ユーザDBから通知トークンを取得
     connect_db = sqlite3.connect('user.db')
     cur = connect_db.cursor()
     users_token = []
     for user_id in talkroom_user_list:
+        if user_id == "":
+            continue
+
         token = cur.execute("""SELECT notify_token FROM user WHERE user_id=?""",
                             (user_id,)).fetchone()[0]
         users_token.append(token)
@@ -53,6 +53,7 @@ def receive_send_info_json():
 
     send_data_to_users(user_tokens=users_token,
                        sender_id=sender_id,
+                       talkroom_name=talkroom_name,
                        talkroom_id=talkroom_id,
                        message=message,
                        timestamp=timestamp)
@@ -60,13 +61,14 @@ def receive_send_info_json():
     return "Success"
 
 
-def send_data_to_users(user_tokens, sender_id, talkroom_id, message, timestamp):
+def send_data_to_users(user_tokens, sender_id, talkroom_name, talkroom_id, message, timestamp):
     api_key = os.getenv("FIREBASE_API_KEY")
     firebase = FCMNotification(api_key=api_key)
 
     # 送信データ
     send_data = {
         "talkroom_id": talkroom_id,
+        "talkroom_name": talkroom_name,
         "sender_id": sender_id,
         "message": message,
         "timestamp": timestamp
