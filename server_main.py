@@ -23,8 +23,8 @@ def check_server():
 def receive_send_info_json():
     # 送信されたJSONから各種情報読み取り
     req_json = json.loads(request.data.decode('utf-8'))
-    talkroom_id = req_json['id']
-    send_user_token = req_json['send_user_token']
+    talkroom_id = req_json['talkroom_id']
+    sender_id = req_json['sender_id']
     message = req_json['message']
     timestamp = req_json['timestamp']
 
@@ -32,7 +32,7 @@ def receive_send_info_json():
     connect_db = sqlite3.connect('talkroom.db')
     cur = connect_db.cursor()
     talkroom_user_list = cur.execute("""SELECT user_list FROM talkroom WHERE id=?""", (talkroom_id,))
-    talkroom_user_list = talkroom_user_list.fetchone()[0].split(";")
+    talkroom_user_list = talkroom_user_list.fetchone()[0].replace(sender_id+";", "").split(";")
     cur.close()
     connect_db.close()
 
@@ -48,7 +48,7 @@ def receive_send_info_json():
     connect_db.close()
 
     send_data_to_users(user_tokens=users_token,
-                       send_user_token=send_user_token,
+                       send_user_token=sender_id,
                        talkroom_id=talkroom_id,
                        message=message,
                        timestamp=timestamp)
