@@ -36,6 +36,10 @@ def receive_send_info_json():
     cur.close()
     connect_db.close()
 
+    # user_listが空だった時の処理
+    if talkroom_user_list[0] == "":
+        talkroom_user_list = []
+
     # ユーザIDをもとに，ユーザDBから通知トークンを取得
     connect_db = sqlite3.connect('user.db')
     cur = connect_db.cursor()
