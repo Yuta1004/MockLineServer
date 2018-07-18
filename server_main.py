@@ -67,7 +67,7 @@ def send_data_to_users(user_tokens, sender_id, talkroom_id, message, timestamp):
     # 送信データ
     send_data = {
         "talkroom_id": talkroom_id,
-        "send_user": sender_id,
+        "sender_id": sender_id,
         "message": message,
         "timestamp": timestamp
     }
