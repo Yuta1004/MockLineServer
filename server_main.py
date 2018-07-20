@@ -318,7 +318,7 @@ def get_talkroom_data():
     ret_dict = {
         "talkroom_id": talkroom_id,
         "talkroom_name": talkroom_data[1],
-        "talkroom_user_lisr": talkroom_data[2],
+        "talkroom_user_list": [user for user in talkroom_data[2].split(";")],
         "talkroom_icon_url": talkroom_data[3]
     }
 
