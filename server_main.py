@@ -182,6 +182,70 @@ def make_talkroom():
     return jsonify({"talkroom_id": talkroom_id})
 
 
+@app.route("/join_talkroom", methods=["POST"])
+def join_talkroom():
+    # 送信されたJsonから情報取り出し
+    req_json = json.loads(request.data.decode('utf-8'))
+    talkroom_id = req_json["talkroom_id"]
+    user_ids = req_json["user_ids"]
+
+    # ユーザidのリストをDB登録用に一文化
+    user_ids_str = ""
+    for user_id in user_ids:
+        if user_id != "":
+            user_ids_str += user_id + ";"
+
+    # DBに接続 -> 現在の値取得
+    connect_db = sqlite3.connect('talkroom.db')
+    cur = connect_db.cursor()
+    now_user_list = cur.execute("""SELECT user_list FROM talkroom WHERE id=?""",
+                                (talkroom_id, )).fetchone()[0]
+
+    # もしこのユーザの退出で参加人数が0人になった場合はトークルームを削除
+    if now_user_list == "":
+        cur.execute("""DELETE FROM talkroom WHERE id=?""",
+                    (talkroom_id, ))
+        connect_db.commit()
+
+        return "Success"
+
+    # 更新
+    cur.execute("""UPDATE talkroom SET user_list=? WHERE id=?""",
+                (now_user_list+user_ids_str, talkroom_id))
+    connect_db.commit()
+
+    cur.close()
+    connect_db.close()
+
+    return "Success"
+
+
+@app.route("/exit_talkroom", methods=["POST"])
+def exit_talkroom():
+    # 送信されたJsonから情報取り出し
+    req_json = json.loads(request.data.decode('utf-8'))
+    talkroom_id = req_json["talkroom_id"]
+    user_id = req_json["user_id"]
+
+    # DBに接続 -> 現在の値取得
+    connect_db = sqlite3.connect('talkroom.db')
+    cur = connect_db.cursor()
+    now_user_list = cur.execute("""SELECT user_list FROM talkroom WHERE id=?""",
+                                (talkroom_id, )).fetchone()[0]
+
+    # 更新
+    now_user_list = now_user_list.replace(user_id+";", "")
+    cur.execute("""UPDATE talkroom SET user_list=? WHERE id=?""",
+                (now_user_list, talkroom_id))
+    connect_db.commit()
+
+    cur.close()
+    connect_db.close()
+
+    return "Success"
+
+
+
 @app.route("/update_talkroom_info", methods=["POST"])
 def update_talkroom_info():
     # 送られてきたJsonから情報を取り出す
