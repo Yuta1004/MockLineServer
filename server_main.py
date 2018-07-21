@@ -1,5 +1,4 @@
-from pyfcm import FCMNotification
-import os
+from functions import send_message_talkroom_users
 from flask import Flask, request, jsonify
 import json
 import sqlite3
@@ -28,55 +27,10 @@ def receive_send_info_json():
     message = req_json['message']
     timestamp = req_json['timestamp']
 
-    # 該当トークルームに参加しているユーザとトークルーム名を取得
-    connect_db = sqlite3.connect('talkroom.db')
-    cur = connect_db.cursor()
-    talkroom_data = cur.execute("""SELECT * FROM talkroom WHERE id=?""", (talkroom_id,)).fetchone()
-    talkroom_user_list = talkroom_data[2].replace(sender_id+";", "").split(";")
-    talkroom_name = talkroom_data[1]
-    cur.close()
-    connect_db.close()
-
-    # ユーザIDをもとに，ユーザDBから通知トークンを取得
-    connect_db = sqlite3.connect('user.db')
-    cur = connect_db.cursor()
-    users_token = []
-    for user_id in talkroom_user_list:
-        if user_id == "":
-            continue
-
-        token = cur.execute("""SELECT notify_token FROM user WHERE user_id=?""",
-                            (user_id,)).fetchone()[0]
-        users_token.append(token)
-    cur.close()
-    connect_db.close()
-
-    send_data_to_users(user_tokens=users_token,
-                       sender_id=sender_id,
-                       talkroom_name=talkroom_name,
-                       talkroom_id=talkroom_id,
-                       message=message,
-                       timestamp=timestamp)
+    # トークルーム参加者にメッセージを送信
+    send_message_talkroom_users(talkroom_id, sender_id, message, timestamp)
 
     return "Success"
-
-
-def send_data_to_users(user_tokens, sender_id, talkroom_name, talkroom_id, message, timestamp):
-    api_key = os.getenv("FIREBASE_API_KEY")
-    firebase = FCMNotification(api_key=api_key)
-
-    # 送信データ
-    send_data = {
-        "talkroom_id": talkroom_id,
-        "talkroom_name": talkroom_name,
-        "sender_id": sender_id,
-        "message": message,
-        "timestamp": timestamp
-    }
-
-    # ユーザへ送信
-    firebase.notify_multiple_devices(registration_ids=user_tokens,
-                                     data_message=send_data)
 
 
 @app.route("/add_user", methods=["POST"])
