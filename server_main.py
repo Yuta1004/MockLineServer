@@ -133,6 +133,9 @@ def make_talkroom():
     cur.close()
     conncect_db.close()
 
+    # トークルームが作成されたことを通知する
+    send_message_talkroom_users(talkroom_id, "owner", "トークルームが作成されました", int(time.time()))
+
     # 生成されたIDをJsonで返す
     return jsonify({"talkroom_id": talkroom_id})
 
