@@ -144,17 +144,25 @@ def join_talkroom():
     talkroom_id = req_json["talkroom_id"]
     user_ids = req_json["user_ids"]
 
-    # ユーザidのリストをDB登録用に一文化
-    user_ids_str = ""
-    for user_id in user_ids:
-        if user_id != "":
-            user_ids_str += user_id + ";"
-
     # DBに接続 -> 現在の値取得
     connect_db = sqlite3.connect('talkroom.db')
     cur = connect_db.cursor()
     now_user_list = cur.execute("""SELECT user_list FROM talkroom WHERE id=?""",
                                 (talkroom_id, )).fetchone()[0]
+
+    # ユーザが被っていたりしないかどうかのフラグ
+    # この後メッセージを全体送信するかどうかの判定に使う
+    success_flag = False
+
+    # ユーザidのリストをDB登録用に一文化
+    user_ids_str = ""
+    for user_id in user_ids:
+        if (user_id != "") and (user_id not in now_user_list):
+            user_ids_str += user_id + ";"
+            success_flag = True
+
+    if not success_flag:
+        return "Failed"
 
     # 更新
     cur.execute("""UPDATE talkroom SET user_list=? WHERE id=?""",
