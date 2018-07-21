@@ -97,15 +97,17 @@ def get_user_data():
     # DBへ接続してユーザ情報取り出し
     for user_id in user_ids:
         user_info = cur.execute("""SELECT * FROM user WHERE user_id=?""",
-                                (user_id, )).fetchone()
+                                (user_id, )).fetchall()
 
-        # ユーザ情報を格納する
-        user_data[user_id] = {
-            "user_id": user_id,
-            "name": user_info[2],
-            "icon_url": user_info[3],
-            "header_image_url": user_info[4]
-        }
+        # ユーザが存在したら
+        if len(user_info) > 0:
+            # ユーザ情報を格納する
+            user_data[user_id] = {
+                "user_id": user_id[0],
+                "name": user_info[0][2],
+                "icon_url": user_info[0][3],
+                "header_image_url": user_info[0][4]
+            }
 
     cur.close()
     connect_db.close()
