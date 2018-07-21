@@ -169,7 +169,12 @@ def join_talkroom():
                 (now_user_list+user_ids_str, talkroom_id))
     connect_db.commit()
 
+    cur.close()
+    connect_db.close()
+
     # ユーザ入室情報を知らせる
+    connect_db = sqlite3.connect('user.db')
+    cur = connect_db.cursor()
     user_name = ""
     for user_id in user_ids:
         user_name += cur.execute("""SELECT name FROM user WHERE user_id=?""",
@@ -201,7 +206,12 @@ def exit_talkroom():
                 (now_user_list, talkroom_id))
     connect_db.commit()
 
+    cur.close()
+    connect_db.close()
+
     # ユーザ退室情報を知らせる
+    connect_db = sqlite3.connect('user.db')
+    cur = connect_db.cursor()
     user_name = cur.execute("""SELECT name FROM user WHERE user_id=?""",
                             (user_id,)).fetchone()[0] + " さん "
     send_message_talkroom_users(talkroom_id, "owner", user_name + "が退室しました", int(time.time()))
