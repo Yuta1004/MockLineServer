@@ -156,14 +156,6 @@ def join_talkroom():
     now_user_list = cur.execute("""SELECT user_list FROM talkroom WHERE id=?""",
                                 (talkroom_id, )).fetchone()[0]
 
-    # もしこのユーザの退出で参加人数が0人になった場合はトークルームを削除
-    if now_user_list == "":
-        cur.execute("""DELETE FROM talkroom WHERE id=?""",
-                    (talkroom_id, ))
-        connect_db.commit()
-
-        return "Success"
-
     # 更新
     cur.execute("""UPDATE talkroom SET user_list=? WHERE id=?""",
                 (now_user_list+user_ids_str, talkroom_id))
@@ -205,6 +197,17 @@ def exit_talkroom():
     cur.execute("""UPDATE talkroom SET user_list=? WHERE id=?""",
                 (now_user_list, talkroom_id))
     connect_db.commit()
+
+    # もしこのユーザの退出で参加人数が0人になった場合はトークルームを削除
+    if now_user_list == "":
+        cur.execute("""DELETE FROM talkroom WHERE id=?""",
+                    (talkroom_id,))
+        connect_db.commit()
+
+        cur.close()
+        connect_db.close()
+
+        return "Success"
 
     cur.close()
     connect_db.close()
