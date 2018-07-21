@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 import json
 import sqlite3
 import uuid
+import time
 
 app = Flask(__name__)
 url = ""
@@ -168,6 +169,13 @@ def join_talkroom():
                 (now_user_list+user_ids_str, talkroom_id))
     connect_db.commit()
 
+    # ユーザ入室情報を知らせる
+    user_name = ""
+    for user_id in user_ids:
+        user_name += cur.execute("""SELECT name FROM user WHERE user_id=?""",
+                                (user_id, )).fetchone()[0] + " さん "
+    send_message_talkroom_users(talkroom_id, "owner", user_name+"が入室しました", int(time.time()))
+
     cur.close()
     connect_db.close()
 
@@ -192,6 +200,11 @@ def exit_talkroom():
     cur.execute("""UPDATE talkroom SET user_list=? WHERE id=?""",
                 (now_user_list, talkroom_id))
     connect_db.commit()
+
+    # ユーザ退室情報を知らせる
+    user_name = cur.execute("""SELECT name FROM user WHERE user_id=?""",
+                            (user_id,)).fetchone()[0] + " さん "
+    send_message_talkroom_users(talkroom_id, "owner", user_name + "が退室しました", int(time.time()))
 
     cur.close()
     connect_db.close()
